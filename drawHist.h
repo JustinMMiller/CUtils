@@ -26,6 +26,7 @@ void drawHistogramFromArray(int *arr, int len);
 Histogram *getHistogram();
 void addEntry(Histogram *h, char *label, int value);
 void drawHistogram(Histogram *h);
+void drawHistogramToStream(Histogram *h, FILE *stream, int swidth);
 void destroyHistogram(Histogram *h);
 
 

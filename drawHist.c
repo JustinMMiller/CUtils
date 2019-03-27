@@ -133,24 +133,23 @@ char *padString(char *str, char padding, int len)
 	return ret;
 }
 
-
-void drawHistogram(Histogram *h)
+void drawHistogramToStream(Histogram *h, FILE *stream, int swidth)
 {
 	int i = 0;
 	int max = findMax(h->values, h->numEntries);
-	int width = getTerminalWidth() - (h->labelLen + 2);
+	int width = swidth - (h->labelLen + 2);
 	int dw = max / width;
 	for(; i < h->numEntries; i++)
 	{
-		printf("\n");
+		fprintf(stream, "\n");
 		char *str = padString(h->labels[i], ' ', h->labelLen);
-		printf("%s|", str);
+		fprintf(stream, "%s|", str);
 		free(str);
 		for(int j = 0; j < width; j++)
 		{
 			if(h->values[i] > dw * j)
 			{
-				printf("#");
+				fprintf(stream, "#");
 			}
 			else
 			{
@@ -158,7 +157,13 @@ void drawHistogram(Histogram *h)
 			}
 		}
 	}
-	printf("\n");
+	fprintf(stream, "\n");
+}
+
+
+void drawHistogram(Histogram *h)
+{
+	drawHistogramToStream(h, stdout, getTerminalWidth());
 }
 
 void destroyHistogram(Histogram *h)
@@ -182,6 +187,8 @@ int main()
 		sprintf(string, "%d", i);
 		addEntry(h, string, rand()%3000);
 	}
-	drawHistogram(h);
+	FILE *out = fopen("test.hist", "w");
+	drawHistogramToStream(h, out, 200);
+	fclose(out);
 	destroyHistogram(h);
 }
