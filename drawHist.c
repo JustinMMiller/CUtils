@@ -1,11 +1,15 @@
 #include "drawHist.h"
 
-// This is just for rand and srand, you won't need this.
 #include<stdlib.h>
 #include<string.h>
 #include<time.h>
 
+/// @file drawHist.c
 
+/**
+ * Internal helper function which finds the maximum value in an array of integers. 
+ * @return The maximum value in the array.
+ */
 int findMax(int *arr, int len)
 {
 	int m = -1;
@@ -19,6 +23,10 @@ int findMax(int *arr, int len)
 	return m;
 }
 
+/**
+ * Internal helper function to get the width of the terminal.
+ * @return The width of the current terminal.
+ */
 int getTerminalWidth()
 {
 	struct winsize w;
@@ -26,98 +34,14 @@ int getTerminalWidth()
 	return w.ws_col;
 }
 
-void padWithZeroes(char *str, int num, int numDigits)
-{
-	int i = 0;
-	if(num == 0)
-	{
-		for(int i = 0; i < numDigits; i++)
-		{
-			str[i] = '0';
-		}
-		str[numDigits] = 0;
-	}
-	else
-	{
-		while(num*pow(10, i) < pow(10, numDigits-1))
-		{
-			str[i] = '0';
-			i++;
-		}
-		sprintf(str + i, "%d", num);
-	}
-}
-
-void drawHistogramFromArray(int *arr, int len)
-{
-	int max = findMax(arr, len);
-	int numDigits = floor(log10(len) + 1);
-	int width = getTerminalWidth() - 5;
-	int dw = max / width;
-	width = getTerminalWidth() - (numDigits + 2);
-	dw = max / width;
-	//printf("%d, %d, %d\n", max, width, dw);
-	for(int i = 0; i < len; i++)
-	{
-		char string[numDigits+2];
-		padWithZeroes(string, i, numDigits);
-		printf("\n");
-		printf("%s|", string);
-		for(int j = 0; j < width - numDigits+2; j++)
-		{
-			if(arr[i] > dw * j)
-			{
-				printf("#");
-			}
-			else
-			{
-				break;
-			}
-		}
-	}
-	printf("\n");
-}
-
-Histogram *getHistogram()
-{
-	Histogram *hist = malloc(sizeof(Histogram));
-	hist->numEntries = 0;
-	hist->labelLen = 1;
-	hist->entryLimit = 50;
-	hist->values = malloc(sizeof(int) * hist->entryLimit);
-	hist->labels = malloc(sizeof(char *)*hist->entryLimit);
-	return hist;
-}
-
-void addEntry(Histogram *h, char *label, int value)
-{
-	if(h->numEntries < h->entryLimit)
-	{
-		h->values[h->numEntries] = value;
-		if(strlen(label) > h->labelLen)
-		{
-			h->labelLen = strlen(label);
-		}
-		h->labels[h->numEntries] = malloc(strlen(label) + 1);
-		strcpy(h->labels[h->numEntries], label);
-		h->numEntries++;
-	}
-	else
-	{
-		int *tvals = malloc(sizeof(int)*(h->numEntries + (h->numEntries / 2)));
-		char **tlabels = malloc(sizeof(char *)*(h->numEntries + (h->numEntries / 2)));
-		memcpy(tvals, h->values, h->numEntries * sizeof(int));
-		memcpy(tlabels, h->labels, h->numEntries * sizeof(char *));
-		free(h->values);
-		free(h->labels);
-		h->labels = tlabels;
-		h->values = tvals;
-		h->entryLimit = h->entryLimit + (h->entryLimit / 2);
-		addEntry(h, label, value);
-	}
-}
-
-//len is the length to pad the string to.
+/**
+ * Helper function to create a new string from the given string padded with the given padding character 
+ * to the specified length. 
+ * @param str The string to be padded
+ * @param padding The character to pad the string with.
+ * @param len The length to pad the string to
+ * @return a new string which is padded with the character.
+ */
 char *padString(char *str, char padding, int len)
 {
 	int needed = len - strlen(str);
@@ -133,6 +57,62 @@ char *padString(char *str, char padding, int len)
 	return ret;
 }
 
+/**
+ * Returns a new instance of a Histogram struct. Performs all the necessary first time setup.
+ * @return A newly instantiated Histogram struct.
+ */
+Histogram *getHistogram()
+{
+	Histogram *hist = malloc(sizeof(Histogram));
+	hist->numEntries = 0;
+	hist->labelLen = 1;
+	hist->entryLimit = 50;
+	hist->values = malloc(sizeof(int) * hist->entryLimit);
+	hist->labels = malloc(sizeof(char *)*hist->entryLimit);
+	return hist;
+}
+
+/**
+ * Adds an entry into a Histogram. 
+ * @param h The Histogram to add the given entry to.
+ * @param label The label for the entry
+ * @param value The value for the entry.
+ */
+void addEntry(Histogram *h, char *label, int value)
+{
+	if(h->numEntries < h->entryLimit)
+	{
+		h->values[h->numEntries] = value;
+		if(strlen(label) > h->labelLen)
+		{
+			h->labelLen = strlen(label);
+		}
+		h->labels[h->numEntries] = malloc(strlen(label) + 1);
+		strcpy(h->labels[h->numEntries], label);
+		h->numEntries++;
+	}
+	// This bit of code allocates space and a half for the values in the Histogram and 
+	// moves the old entries to the new location and tries inserting the value again.
+	else
+	{
+		int *tvals = malloc(sizeof(int)*(h->numEntries + (h->numEntries / 2)));
+		char **tlabels = malloc(sizeof(char *)*(h->numEntries + (h->numEntries / 2)));
+		memcpy(tvals, h->values, h->numEntries * sizeof(int));
+		memcpy(tlabels, h->labels, h->numEntries * sizeof(char *));
+		free(h->values);
+		free(h->labels);
+		h->labels = tlabels;
+		h->values = tvals;
+		h->entryLimit = h->entryLimit + (h->entryLimit / 2);
+		addEntry(h, label, value);
+	}
+}
+
+/**
+ * Draws a Histogram struct to the specified stream formatted to the given width.
+ * @param stream The stream to print the Histogram to. Can be a file.
+ * @param swidth The width of the stream to be printed to. 
+ */
 void drawHistogramToStream(Histogram *h, FILE *stream, int swidth)
 {
 	int i = 0;
@@ -160,12 +140,19 @@ void drawHistogramToStream(Histogram *h, FILE *stream, int swidth)
 	fprintf(stream, "\n");
 }
 
-
+/**
+ * Convenience function to simply print out a Histogram to the terminal.
+ * @param h The Histogram to be displayed.
+ */
 void drawHistogram(Histogram *h)
 {
 	drawHistogramToStream(h, stdout, getTerminalWidth());
 }
 
+/**
+ * Takes in a Histogram struct and frees all of it's assets.
+ * @param h The Histogram struct to be destroyed
+ */
 void destroyHistogram(Histogram *h)
 {
 	for(int i = 0; i < h->numEntries; i++)
