@@ -69,6 +69,7 @@ Histogram *getHistogram()
 	hist->entryLimit = 50;
 	hist->values = malloc(sizeof(int) * hist->entryLimit);
 	hist->labels = malloc(sizeof(char *)*hist->entryLimit);
+	hist->paddingChar = ' ';
 	return hist;
 }
 
@@ -122,7 +123,7 @@ void drawHistogramToStream(Histogram *h, FILE *stream, int swidth)
 	for(; i < h->numEntries; i++)
 	{
 		fprintf(stream, "\n");
-		char *str = padString(h->labels[i], ' ', h->labelLen);
+		char *str = padString(h->labels[i], h->paddingChar, h->labelLen);
 		fprintf(stream, "%s|", str);
 		free(str);
 		for(int j = 0; j < width; j++)
@@ -141,12 +142,42 @@ void drawHistogramToStream(Histogram *h, FILE *stream, int swidth)
 }
 
 /**
+ *
+ */
+void setPaddingCharacter(Histogram *h, char padding)
+{
+	h->paddingChar = padding;
+}
+
+/**
  * Convenience function to simply print out a Histogram to the terminal.
  * @param h The Histogram to be displayed.
  */
 void drawHistogram(Histogram *h)
 {
 	drawHistogramToStream(h, stdout, getTerminalWidth());
+}
+
+/** @deprecated
+ * Takes in an array of integers and prints them as a Histogram with the 
+ * index as the label.
+ * @param arr The array of values to be displayed.
+ * @param len The number of entries in the array.
+ */
+void drawHistogramFromArray(int *arr, int len)
+{
+	Histogram *h = getHistogram();
+	for(int i = 0; i < len; i++)
+	{
+		int slen = (int) (log10(arr[i]) + 1);
+		char *string = malloc(sizeof(char) * (slen + 1));
+		sprintf(string, "%d", i);
+		addEntry(h, string, arr[i]);
+		free(string);
+	}
+	setPaddingCharacter(h, '0');
+	drawHistogram(h);
+	destroyHistogram(h);
 }
 
 /**
@@ -166,16 +197,11 @@ void destroyHistogram(Histogram *h)
 
 int main()
 {
-	Histogram *h = getHistogram();
+	int arr[200];
 	srand(time(0));
 	for(int i = 0; i < 200; i++)
 	{
-		char string[5];
-		sprintf(string, "%d", i);
-		addEntry(h, string, rand()%3000);
+		arr[i] = rand()%3000;
 	}
-	FILE *out = fopen("test.hist", "w");
-	drawHistogramToStream(h, out, 200);
-	fclose(out);
-	destroyHistogram(h);
+	drawHistogramFromArray(arr, 200);
 }

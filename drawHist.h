@@ -13,6 +13,7 @@ struct _Hist
 	int *values;
 	int labelLen;
 	int entryLimit;
+	char paddingChar;
 };
 
 typedef struct _Hist Histogram;
