@@ -49,7 +49,7 @@ void vector_destroy(struct vector *vec);
  *  @param iterv   The name of the iterator variable for the loop.
  *  @param vec     The struct vector to iterate over.
  */
-#define FOR_EACH(iterv_t, iterv, vec) iterv_t iterv = (vec)->arr; for (uint32_t iterv##_idx=0; (iterv##_idx * (vec)->memb_size) < (vec)->len; iterv##_idx++, iterv++)
+#define FOR_EACH(iterv_t, iterv, vec) iterv_t iterv = (vec)->arr; for (uint32_t iterv##_idx=0; iterv##_idx < (vec)->len; iterv##_idx++, iterv++)
 
 #endif
 
