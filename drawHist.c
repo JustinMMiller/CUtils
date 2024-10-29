@@ -2,7 +2,6 @@
 
 #include<stdlib.h>
 #include<string.h>
-#include<time.h>
 
 /// @file drawHist.c
 
@@ -195,6 +194,8 @@ void destroyHistogram(Histogram *h)
 	free(h);
 }
 
+#ifdef INCLUDE_MAIN
+#include<time.h>
 int main()
 {
 	int arr[200];
@@ -205,3 +206,4 @@ int main()
 	}
 	drawHistogramFromArray(arr, 200);
 }
+#endif
